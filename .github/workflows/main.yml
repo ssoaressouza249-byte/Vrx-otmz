@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unpack ZIP and Patch Manifest
+      - name: Unpack ZIP and Generate Clean Manifest
         run: |
           ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | sort | tail -n 1)
           if [ -n "$ZIP_FILE" ]; then
@@ -29,62 +29,41 @@ jobs:
 
           python3 -c '
           import glob
-          xml = """<?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://android.com"
-              xmlns:tools="http://android.com">
-              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-              <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
-              <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-              <queries>
-                  <package android:name="moe.shizuku.privileged.api" />
-                  <package android:name="com.roblox.client" />
-                  <package android:name="com.dts.freefireth" />
-                  <package android:name="com.dts.freefiremax" />
-              </queries>
-              <application
-                  android:allowBackup="true"
-                  android:dataExtractionRules="@xml/data_extraction_rules"
-                  android:fullBackupContent="@xml/backup_rules"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="@string/app_name"
-                  android:roundIcon="@mipmap/ic_launcher_round"
-                  android:supportsRtl="true"
-                  android:theme="@style/Theme.VRXOTMZ">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:label="@string/app_name"
-                      android:theme="@style/Theme.VRXOTMZ"
-                      android:windowSoftInputMode="adjustResize">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-                  <service
-                      android:name=".overlay.FloatingOverlayService"
-                      android:enabled="true"
-                      android:exported="false"
-                      android:foregroundServiceType="specialUse">
-                      <property
-                          android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                          android:value="Real-time FPS counter and in-game optimization HUD overlay" />
-                  </service>
-                  <provider
-                      android:name="rikka.shizuku.ShizukuProvider"
-                      android:authorities="${applicationId}.shizuku"
-                      android:enabled="true"
-                      android:exported="true"
-                      android:multiprocess="false"
-                      android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
-              </application>
-          </manifest>"""
+          a = "android:"
+          t = "tools:"
+          lines = [
+              "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+              "<manifest xmlns:android=\"http://android.com\" xmlns:tools=\"http://android.com\">",
+              f"  <uses-permission {a}name=\"android.permission.SYSTEM_ALERT_WINDOW\" />",
+              f"  <uses-permission {a}name=\"android.permission.QUERY_ALL_PACKAGES\" {t}ignore=\"QueryAllPackagesPermission\" />",
+              f"  <uses-permission {a}name=\"android.permission.REQUEST_DELETE_PACKAGES\" />",
+              f"  <uses-permission {a}name=\"android.permission.FOREGROUND_SERVICE\" />",
+              f"  <uses-permission {a}name=\"android.permission.FOREGROUND_SERVICE_SPECIAL_USE\" />",
+              f"  <uses-permission {a}name=\"android.permission.POST_NOTIFICATIONS\" />",
+              "  <queries>",
+              f"    <package {a}name=\"moe.shizuku.privileged.api\" />",
+              f"    <package {a}name=\"com.roblox.client\" />",
+              f"    <package {a}name=\"com.dts.freefireth\" />",
+              f"    <package {a}name=\"com.dts.freefiremax\" />",
+              "  </queries>",
+              f"  <application {a}allowBackup=\"true\" {a}dataExtractionRules=\"@xml/data_extraction_rules\" {a}fullBackupContent=\"@xml/backup_rules\" {a}icon=\"@mipmap/ic_launcher\" {a}label=\"@string/app_name\" {a}roundIcon=\"@mipmap/ic_launcher_round\" {a}supportsRtl=\"true\" {a}theme=\"@style/Theme.VRXOTMZ\">",
+              f"    <activity {a}name=\".MainActivity\" {a}exported=\"true\" {a}label=\"@string/app_name\" {a}theme=\"@style/Theme.VRXOTMZ\" {a}windowSoftInputMode=\"adjustResize\">",
+              "      <intent-filter>",
+              f"        <action {a}name=\"android.intent.action.MAIN\" />",
+              f"        <category {a}name=\"android.intent.category.LAUNCHER\" />",
+              "      </intent-filter>",
+              "    </activity>",
+              f"    <service {a}name=\".overlay.FloatingOverlayService\" {a}enabled=\"true\" {a}exported=\"false\" {a}foregroundServiceType=\"specialUse\">",
+              f"      <property {a}name=\"android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE\" {a}value=\"Real-time FPS counter and in-game optimization HUD overlay\" />",
+              "    </service>",
+              f"    <provider {a}name=\"rikka.shizuku.ShizukuProvider\" {a}authorities=\"${{applicationId}}.shizuku\" {a}enabled=\"true\" {a}exported=\"true\" {a}multiprocess=\"false\" {a}permission=\"android.permission.INTERACT_ACROSS_USERS_FULL\" />",
+              "  </application>",
+              "</manifest>"
+          ]
+          xml = "\n".join(lines)
           for path in glob.glob("**/src/main/AndroidManifest.xml", recursive=True):
               open(path, "w").write(xml)
-              print("Patched:", path)
+              print("FIXED:", path)
           '
 
       - name: Set up JDK 17
