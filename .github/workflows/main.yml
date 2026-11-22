@@ -10,10 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Unpack ZIP and Generate Clean Manifest
+      - name: Unpack ZIP and Fix Manifest
         run: |
           ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | sort | tail -n 1)
           if [ -n "$ZIP_FILE" ]; then
@@ -26,62 +25,23 @@ jobs:
             fi
             rm -rf temp_extract *.zip
           fi
+          find . -name "AndroidManifest.xml" -exec sed -i -E 's/([[:space:]])(name|allowBackup|dataExtractionRules|fullBackupContent|icon|label|roundIcon|supportsRtl|theme|exported|windowSoftInputMode|enabled|foregroundServiceType|value|authorities|multiprocess|permission|ignore)=/\1android:\2=/g' {} +
+          find . -name "AndroidManifest.xml" -exec sed -i 's/android:ignore=/tools:ignore=/g' {} +
+          find . -name "AndroidManifest.xml" -exec sed -i 's/android:android:/android:/g' {} +
 
-          python3 -c '
-          import glob
-          a = "android:"
-          t = "tools:"
-          lines = [
-              "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
-              "<manifest xmlns:android=\"http://android.com\" xmlns:tools=\"http://android.com\">",
-              f"  <uses-permission {a}name=\"android.permission.SYSTEM_ALERT_WINDOW\" />",
-              f"  <uses-permission {a}name=\"android.permission.QUERY_ALL_PACKAGES\" {t}ignore=\"QueryAllPackagesPermission\" />",
-              f"  <uses-permission {a}name=\"android.permission.REQUEST_DELETE_PACKAGES\" />",
-              f"  <uses-permission {a}name=\"android.permission.FOREGROUND_SERVICE\" />",
-              f"  <uses-permission {a}name=\"android.permission.FOREGROUND_SERVICE_SPECIAL_USE\" />",
-              f"  <uses-permission {a}name=\"android.permission.POST_NOTIFICATIONS\" />",
-              "  <queries>",
-              f"    <package {a}name=\"moe.shizuku.privileged.api\" />",
-              f"    <package {a}name=\"com.roblox.client\" />",
-              f"    <package {a}name=\"com.dts.freefireth\" />",
-              f"    <package {a}name=\"com.dts.freefiremax\" />",
-              "  </queries>",
-              f"  <application {a}allowBackup=\"true\" {a}dataExtractionRules=\"@xml/data_extraction_rules\" {a}fullBackupContent=\"@xml/backup_rules\" {a}icon=\"@mipmap/ic_launcher\" {a}label=\"@string/app_name\" {a}roundIcon=\"@mipmap/ic_launcher_round\" {a}supportsRtl=\"true\" {a}theme=\"@style/Theme.VRXOTMZ\">",
-              f"    <activity {a}name=\".MainActivity\" {a}exported=\"true\" {a}label=\"@string/app_name\" {a}theme=\"@style/Theme.VRXOTMZ\" {a}windowSoftInputMode=\"adjustResize\">",
-              "      <intent-filter>",
-              f"        <action {a}name=\"android.intent.action.MAIN\" />",
-              f"        <category {a}name=\"android.intent.category.LAUNCHER\" />",
-              "      </intent-filter>",
-              "    </activity>",
-              f"    <service {a}name=\".overlay.FloatingOverlayService\" {a}enabled=\"true\" {a}exported=\"false\" {a}foregroundServiceType=\"specialUse\">",
-              f"      <property {a}name=\"android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE\" {a}value=\"Real-time FPS counter and in-game optimization HUD overlay\" />",
-              "    </service>",
-              f"    <provider {a}name=\"rikka.shizuku.ShizukuProvider\" {a}authorities=\"${{applicationId}}.shizuku\" {a}enabled=\"true\" {a}exported=\"true\" {a}multiprocess=\"false\" {a}permission=\"android.permission.INTERACT_ACROSS_USERS_FULL\" />",
-              "  </application>",
-              "</manifest>"
-          ]
-          xml = "\n".join(lines)
-          for path in glob.glob("**/src/main/AndroidManifest.xml", recursive=True):
-              open(path, "w").write(xml)
-              print("FIXED:", path)
-          '
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle 9.3.1
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
 
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: VRX-OTMZ-Debug-APK
           path: app/build/outputs/apk/debug/*.apk
