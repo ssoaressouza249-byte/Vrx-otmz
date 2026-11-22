@@ -15,17 +15,17 @@ jobs:
 
       - name: Unpack ZIP if uploaded compressed
         run: |
-          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | sort | tail -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "Descompactando $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d temp_extract
             if [ $(ls -1 temp_extract | wc -l) -eq 1 ] && [ -d "temp_extract/$(ls -1 temp_extract)" ]; then
               SUBDIR=$(ls -1 temp_extract)
-              cp -rn temp_extract/"$SUBDIR"/* . 2>/dev/null || cp -r temp_extract/"$SUBDIR"/* .
+              cp -rf temp_extract/"$SUBDIR"/* .
             else
-              cp -rn temp_extract/* . 2>/dev/null || cp -r temp_extract/* .
+              cp -rf temp_extract/* .
             fi
-            rm -rf temp_extract "$ZIP_FILE"
+            rm -rf temp_extract *.zip
           fi
 
       - name: Set up JDK 17
