@@ -25,9 +25,7 @@ jobs:
             fi
             rm -rf temp_extract *.zip
           fi
-          find . -name "AndroidManifest.xml" -exec sed -i -E 's/([[:space:]])(name|allowBackup|dataExtractionRules|fullBackupContent|icon|label|roundIcon|supportsRtl|theme|exported|windowSoftInputMode|enabled|foregroundServiceType|value|authorities|multiprocess|permission|ignore)=/\1android:\2=/g' {} +
-          find . -name "AndroidManifest.xml" -exec sed -i 's/android:ignore=/tools:ignore=/g' {} +
-          find . -name "AndroidManifest.xml" -exec sed -i 's/android:android:/android:/g' {} +
+          find . -name "AndroidManifest.xml" -exec sed -i -E 's/(<category|<service|<property)[[:space:]]+name=/\1 android:name=/g' {} +
 
       - uses: actions/setup-java@v4
         with:
